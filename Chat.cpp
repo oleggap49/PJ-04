@@ -36,7 +36,7 @@ bool Chat::Registration()
     {
         cout << e.what();
     }
-    return false;
+    
 }
 
 bool Chat::Autorisation() 
