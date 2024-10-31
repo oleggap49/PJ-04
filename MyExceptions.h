@@ -2,60 +2,60 @@
 // классы -наследники exception для перхвата нештатных ситуаций связанных с неверным вводом данных
 #include <exception>  
 
-class  UsernameExist : public exception
+class  UsernameExist : public std:: exception
 {
 public:
     virtual const char* what() const noexcept override
     {
-        return " Пользователь с таким именем уже существует! \n";
+        return " Username Exist ! \n";
     }
 };
-class  UsernameNotExist : public exception
+class  UsernameNotExist : public std::exception
 {
 public:
     virtual const char* what() const noexcept override
     {
-        return " Ошибка! Зарегистрированный пользователь с таким именем не найден! \nЗарегистрируйтесь.\n";
+        return " UsernameNotExist! \n";
     }
 };
 
-class  WrongPassword : public exception
+class  WrongPassword : public std::exception
 {
 public:
     virtual const char* what() const noexcept override
     {
-        return " Пользователь зарегистрирован с другим паролем!\n";
+        return " ПWrongPassword!\n";
     }
 };
-class  NotAutorized : public exception
+class  NotAutorized : public std::exception
 {
 public:
     virtual const char* what() const noexcept override
     {
-        return " Пользователь не авторизован!\n";
+        return " NotAutorized!\n";
     }
 };
-class  NotAdmin : public exception
+class  NotAdmin : public std::exception
 {
 public:
     virtual const char* what() const noexcept override
     {
-        return " Это действие доступно только администратору!\n";
+        return " NotAdmin!\n";
     }
 };
-class  ALLisreserved : public exception
+class  ALLisreserved : public std::exception
 {
 public:
     virtual const char* what() const noexcept override
     {
-        return " Имя ALL зарезервировано для групповой рассылки!\n";
+        return " ALLisreserved!\n";
     }
 };
-class   MessNotSent : public exception
+class   MessNotSent : public std::exception
 {
 public:
     virtual const char* what() const noexcept override
     {
-        return " Сообщение не отправлено!\n";
+        return " СMessNotSent!\n";
     }
 };

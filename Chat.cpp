@@ -2,40 +2,190 @@
 #include <exception>
 #include "MyExceptions.h"
 
+void Chat::StartTCPServer()
+{
+     
+    socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_file_descriptor == -1) {
+        cout << "Socket creation failed.!" << endl;
+        exit(1);
+    }
+    
+    serveraddress.sin_addr.s_addr = htonl(INADDR_ANY);
+     
+    serveraddress.sin_port = htons(PORT);
+     
+    serveraddress.sin_family = AF_INET;
+    
+    bind_status = bind(socket_file_descriptor, (struct sockaddr*)&serveraddress,
+        sizeof(serveraddress));
+    if (bind_status == -1) {
+        cout << "Socket binding failed.!" << endl;
+        exit(1);
+    }
+     
+    connection_status = listen(socket_file_descriptor, 5);
+    if (connection_status == -1) {
+        cout << "Socket is unable to listen for new connections.!" << endl;
+        exit(1);
+    }
+    else {
+        cout << "Server is listening for new connection: " << endl;
+    }
+    length = sizeof(client);
+    connection = accept(socket_file_descriptor, (struct sockaddr*)&client, &length);
+    if (connection == -1) {
+        cout << "Server is unable to accept the data from client.!" << endl;
+        exit(1);
+    }
+}
+
+ 
+
+int Chat::TCPServerDialogue()
+{
+    char oper;
+string res = "\n";
+     do
+    {
+            
+              // send to user
+              bzero(message, MESSAGE_LENGTH);
+              strcat(message, res.c_str());
+//cout << message <<endl;
+
+              strcat(message, "Enter command: ");
+ 
+              ssize_t bytes = write(connection, message, sizeof(message));
+              // get from user
+         bzero(message, MESSAGE_LENGTH);
+         read(connection, message, sizeof(message));
+       //  cout << "Data received from client: " << message << endl;
+
+        if (strncmp("end", message, 3) == 0) 
+        {
+            cout << "Client Exited." << endl;
+            cout << "Server is Exiting..!" << endl;
+            break;
+        }
+     oper = message[0];
+       // cin >> oper;
+        switch (oper)
+        {
+        case 'r':
+        {
+             Registration();
+               
+               res ="Successfull registation \n" ;
+              
+            
+        }
+        break;
+        case 'a':
+        {
+             Autorisation();
+             res ="Successfull  autorization \n" ;
+        }
+        break;
+        case 'm':
+        {
+            try
+            {
+                
+               if(!  SendMessage( ))
+                            throw MessNotSent(); 
+            }
+            catch (exception& e)
+            {
+                cout << e.what();
+            }
+             res ="Message sent \n" ;
+        }
+        break;
+        case 'l':
+        {
+             ReadLog();
+             res ="Log read\n" ;
+        }
+        break;
+        case 'h':
+        {
+            cout <<
+                " Valid commands:"
+                << "'r'  - registration(name ALL - reserved)" << endl
+                << " 'a' - autorization" << endl
+                << " 'end'   exit  " << endl
+                << "'h' - help " << endl
+                << "'l' - read log ." << endl
+                
+                << "'m'- send a message, " << endl
+                                ;
+        }
+        break;
+        
+
+        default:
+        {
+            cout << "Wrong command!" << endl
+                << "'h' - get help " << endl;
+            break;
+        }
+        }
+      //  cout << hor_line << endl;
+         UsersList();
+    } while (1);
+
+    close(socket_file_descriptor);
+    return 0;
+}
+
+
 bool Chat::Registration()
 
 {
     string lgn;
     string pass;
+               // send to user
+              bzero(message, MESSAGE_LENGTH);
+              strcat(message, " Registration \nEnter login: ");
+              ssize_t bytes = write(connection, message, sizeof(message));
+              bytes = 0;
+         // get from user
+         bzero(message, MESSAGE_LENGTH);
+         read(connection, message, sizeof(message));
+        // cout << "Data received from client: " << message << endl;
 
-    cout << " РЕГИСТРАЦИЯ" << endl;
-    cout <<
-        " Придумайте НИК:" << endl;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-    getline(cin, lgn);
+    lgn=message;
     try
     {
-        if (lgn == "ALL") throw ALLisreserved(); //имя ALL зарезнрвировано для групповой рассылки
+        if (lgn == "ALL") throw ALLisreserved();  
          
-        if (SearchNick(lgn))  throw UsernameExist();     // проверка, есть такой пользователь
+        if (SearchNick(lgn))  throw UsernameExist();      
 
-        cout <<
-            " Придумайте Пароль:" << endl;
-
-        getline(cin, pass);
+              // send to user
+              bzero(message, MESSAGE_LENGTH);
+              strcat(message, " Enter Password: ");
+               bytes = write(connection, message, sizeof(message));
+               bytes = 0;
+         // get from user
+         bzero(message, MESSAGE_LENGTH);
+         read(connection, message, sizeof(message));
+        // cout << "Data received from client: " << message << endl;
+        pass = message;
 
         User u1(lgn, pass, false);
         users.push_back(u1);
          
-        cout << "Успешная регистрация " << u1.login << "!\n"
+        cout << "Registation -  " << u1.getLogin()  
             << endl;
+            
         return true;
     }
     catch (exception& e)
     {
         cout << e.what();
     }
+return false;
     
 }
 
@@ -43,36 +193,64 @@ bool Chat::Autorisation()
 {
     string lgn;
     string pass;
-    cout << " АВТОРИЗАЦИЯ" << endl;
-    cout <<
-        " Введите НИК:" << endl;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    
+ // send to user
+              bzero(message, MESSAGE_LENGTH);
+              strcat(message, " Autorization \nEnter login: ");
+              ssize_t bytes = write(connection, message, sizeof(message));
+              bytes = 0;
+         // get from user
+         bzero(message, MESSAGE_LENGTH);
+         read(connection, message, sizeof(message));
+        // cout << "Data received from client: " << message << endl;
 
-    getline(cin, lgn);
+    lgn=message;
+ 
     try
     {
         if (!SearchNick(lgn))
-            throw UsernameNotExist(); //проверка, зарегистрирован ли такой пользователь
-
-        cout <<
-            " Введите пароль:" << endl;
-        getline(cin, pass);
+            throw UsernameNotExist();  
+ 
+              bzero(message, MESSAGE_LENGTH);
+              strcat(message, "  Enter password: ");
+              ssize_t bytes = write(connection, message, sizeof(message));
+              bytes = 0;
+         // get from user
+         bzero(message, MESSAGE_LENGTH);
+         read(connection, message, sizeof(message));
+       //  cout << "Data received from client: " << message << endl;         
+ pass=message;
         vector<User>::iterator it = users.begin();
         for (; it != users.end(); it++)
-            if (it->autorized == true) it->autorized = false;   // убираем предидущую авторизацию, если она была
+            if (it->getAutorized() == true) it->setAutorized (false);     
         for (it = users.begin(); it != users.end(); it++)
         {
-            if (it->login == lgn)
-             if (it->password == pass)// проверка пароля
+            if (it->getLogin() == lgn)
+             if (it->getPassword() == pass) 
               {
-               it->autorized=true ;  //признак , что пользователь авторизован
-               cout << it->login << ", вы успешно авторизованы!" << endl;
-               for (Message& msg : it->unreadMsg)   //сообщения авторизованному пользователю
+               it->setAutorized(true) ;   
+              cout << it->getLogin() << " autorized." << endl;
+               
+               for (Message& msg : it->unreadMsg)   
                {
-                   cout << msg.sender <<"->" << msg.recipient<<" : " << msg.text << endl; //выводим на экран
-                    logMsg.push_back(msg);                    // добавляем в список журнала
-                    it->unreadMsg.pop_front();               // убираем из очереди непрочтенных ( из начала)
+                   cout << msg.sender <<"->" << msg.recipient<<" : " << msg.text << endl; 
+                 
+              bzero(message, MESSAGE_LENGTH);
+              strcat(message, msg.sender.c_str()  );
+              strcat(message, "->"   );
+              strcat(message, msg.recipient.c_str()  );
+              strcat(message, " : "   ); 
+              strcat(message, msg.text.c_str()  );
+              strcat(message, "\nEnter "" read""" );
+              ssize_t bytes = write(connection, message, sizeof(message));
+              bytes = 0;
+              bzero(message, MESSAGE_LENGTH);
+              read(connection, message, sizeof(message));
+                    logMsg.push_back(msg);                     
+                    it->unreadMsg.pop_front();               
                }
+                
+
                return true;
               }
              else  throw WrongPassword();
@@ -84,16 +262,16 @@ bool Chat::Autorisation()
     }
  return false;
 }
-// выводит на консоль количество и список загегистрированных пользователей
+ 
 void Chat::UsersList()
 {
-    cout << "В чате - " << users.size() << " пользавателей." << endl;
+    cout << "There are    " << users.size() << " users in the chat now." << endl;
     for (User& user : users) {
-        cout << user.login <<  endl;
+        cout << user.getLogin() <<  endl;
     }
     cout << endl;
 }
-// проверяет есть ли пользаватенль lgn в списке зарегистрированных
+ 
 bool Chat::SearchNick(const string& lgn)
 {
     
@@ -102,12 +280,12 @@ bool Chat::SearchNick(const string& lgn)
     for (; it != users.end(); it++)
     {
 
-        if (it->login == lgn)
+        if (it->getLogin() == lgn)
             return true;
     }
     return false;
   }
-// отправка сообщения
+ 
 bool Chat::SendMessage()
 {
    
@@ -118,38 +296,51 @@ bool Chat::SendMessage()
       for (; it != users.end(); it++)
       {
 
-        if (it->autorized == true) // нашли авторизаванного пользователя
+        if (it->getAutorized() == true)  
         {
+            string Text; 
+            string reciepent;  
+
+        
+             bzero(message, MESSAGE_LENGTH);
+              strcat(message, " Message:  ");
+              ssize_t bytes = write(connection, message, sizeof(message));
+              bytes = 0;
+         // get from user
+         bzero(message, MESSAGE_LENGTH);
+         read(connection, message, sizeof(message));
+       //  cout << "Data received from client: " << message << endl;
+
+    Text=message;
              
-               
-            cout << "СООБЩЕНИЕ: " << endl;
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            string Text;
-            getline(cin, Text);                             // ввод текста сообщения
-            cout << " Кому:" << endl;
-            string reciepent;
-            getline(cin, reciepent);
-            
-             
-                
+           bzero(message, MESSAGE_LENGTH);
+              strcat(message, " Reciepent:  ");
+               bytes = write(connection, message, sizeof(message));
+              bytes = 0;
+         // get from user
+         bzero(message, MESSAGE_LENGTH);
+         read(connection, message, sizeof(message));
+         //cout << "Data received from client: " << message << endl;
+
+    reciepent=message;     
                 vector<User>::iterator itR = users.begin();
 
                 for (; itR != users.end(); itR++)
                 {
                     if(reciepent =="ALL")
                     {
-                        if (it->login == itR->login) continue; // самому себе не отправляем
-                        Message msgAll(it->login, itR->login, Text);
+                        if (it->getLogin() == itR->getLogin()) continue;  
+                        Message msgAll(it->getLogin(), itR->getLogin(), Text);
                         itR->unreadMsg.push_back(msgAll);
                          
                     }
                     else
                         if (!SearchNick(reciepent))
-                            throw UsernameNotExist(); //проверка, зарегистрирован ли такой пользователь
-                    if (itR->login == reciepent) // нашли получателя
+                            throw UsernameNotExist();   
+                    if (itR->getLogin() == reciepent)  
                     {
-                        Message msg(it->login, reciepent, Text);
-                        itR->unreadMsg.push_back(msg);                  // добавили в конец деки получателя
+                        Message msg(it->getLogin(), reciepent, Text);
+                        itR->unreadMsg.push_back(msg);                    
                         
                     }
                 }
@@ -165,12 +356,24 @@ bool Chat::SendMessage()
         return false;
     }
 }
-//выводит на консоль журнал (прочтенные сообщения)
+
 void Chat::ReadLog()
 {
     for (Message& msg : logMsg)
     {
         cout << msg.sender << "->" << msg.recipient << " : " << msg.text << endl;
+              bzero(message, MESSAGE_LENGTH);
+              strcat(message, msg.sender.c_str()  );
+              strcat(message, "->"   );
+              strcat(message, msg.recipient.c_str()  );
+              strcat(message, " : "   ); 
+              strcat(message, msg.text.c_str()  );
+              strcat(message, "\nEnter "" read""" );
+              ssize_t bytes = write(connection, message, sizeof(message));
+              bytes = 0;
+              bzero(message, MESSAGE_LENGTH);
+              read(connection, message, sizeof(message));
+                          
      }
 }
 
